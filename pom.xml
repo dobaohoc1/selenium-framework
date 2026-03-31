@@ -20,6 +20,8 @@
         <selenium.version>4.18.1</selenium.version>
         <testng.version>7.9.0</testng.version>
         <webdrivermanager.version>5.7.0</webdrivermanager.version>
+        <allure.version>2.26.0</allure.version>
+        <aspectj.version>1.9.21</aspectj.version>
         <!-- Default suite file; CI sẽ override bằng -DsuiteXmlFile=testng-smoke.xml -->
         <suiteXmlFile>testng.xml</suiteXmlFile>
     </properties>
@@ -59,6 +61,20 @@
             <artifactId>slf4j-simple</artifactId>
             <version>2.0.12</version>
         </dependency>
+
+        <!-- Allure TestNG - tạo báo cáo đẹp -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+
+        <!-- AspectJ - bắt buộc để Allure.step() hoạt động đúng -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+            <version>${aspectj.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -89,7 +105,18 @@
                     <systemPropertyVariables>
                         <screenshotDir>${project.build.directory}/screenshots</screenshotDir>
                     </systemPropertyVariables>
+                    <!-- Bắt buộc: AspectJ agent để Allure.step() hoạt động -->
+                    <argLine>
+                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/${aspectj.version}/aspectjweaver-${aspectj.version}.jar"
+                    </argLine>
                 </configuration>
+            </plugin>
+
+            <!-- Allure Maven Plugin - tạo HTML report -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.12.0</version>
             </plugin>
         </plugins>
     </build>

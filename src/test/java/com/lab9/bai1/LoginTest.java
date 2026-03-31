@@ -1,42 +1,24 @@
 package com.lab9.bai1;
 
+import io.qameta.allure.*;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Map;
 
 /**
- * <h2>LoginTest - Test class kiểm thử đăng nhập SauceDemo</h2>
+ * <h2>LoginTest – Test class kiểm thử đăng nhập SauceDemo</h2>
  *
  * <p>
- * Kế thừa BaseTest để tự động có WebDriver, setup/teardown, và chụp ảnh khi
- * fail.
+ * Tích hợp Allure Report với đầy đủ annotations và step logging.
  * </p>
  *
- * <h3>Tuân thủ 4 quy tắc framework:</h3>
- * <ol>
- * <li>Mọi @Test dùng {@code getDriver()} từ BaseTest - không tạo WebDriver
- * mới</li>
- * <li>Mọi {@code driver.findElement()} nằm trong Page Object
- * (LoginPage/BasePage)</li>
- * <li>Dữ liệu test (username, password, URL) đọc từ file JSON và
- * config.properties</li>
- * <li>Không dùng {@code Thread.sleep()} ở bất kỳ đâu</li>
- * </ol>
- *
- * <h3>Kiểm tra song song (parallel):</h3>
- * <p>
- * Khi chạy với testng.xml có {@code parallel="methods" thread-count="3"},
- * 3 test method sẽ mở 3 cửa sổ Chrome cùng lúc mà KHÔNG xung đột
- * nhờ cơ chế ThreadLocal trong BaseTest.
- * </p>
- *
- * @author Lab9 - Page Object Model Framework
- * @version 1.0
+ * @author Lab11 - CI/CD Framework
+ * @version 2.0
  */
+@Feature("Xác thực người dùng") // Nhóm feature trong Allure
 public class LoginTest extends BaseTest {
 
-        /** Đường dẫn file test data JSON (tương đối từ classpath) */
         private static final String LOGIN_DATA = "testdata/login_data.json";
 
         // =========================================================
@@ -44,101 +26,92 @@ public class LoginTest extends BaseTest {
         // =========================================================
 
         /**
-         * TC01 - Đăng nhập thành công với tài khoản hợp lệ.
-         *
-         * <p>
-         * <b>Dữ liệu:</b> đọc từ {@code testdata/login_data.json} — testCase
-         * "TC01_LoginSuccess"
-         * </p>
-         * <p>
-         * <b>Kỳ vọng:</b> Trang Products hiển thị sau khi login.
-         * </p>
+         * TC01 – Đăng nhập thành công với tài khoản hợp lệ.
          */
         @Test(description = "TC01 - Đăng nhập thành công")
+        @Story("UC-001: Đăng nhập bằng tài khoản hợp lệ")
+        @Description("Kiểm thử đăng nhập với username/password hợp lệ → trang Products hiển thị")
+        @Severity(SeverityLevel.CRITICAL)
         public void testLoginSuccess() {
-                // Đọc dữ liệu từ JSON — KHÔNG hardcode username/password
                 Map<String, String> data = TestDataReader.getTestCase(LOGIN_DATA, "TC01_LoginSuccess");
-                String username = data.get("username");
-                String password = data.get("password");
 
-                // Dùng getDriver() từ BaseTest — KHÔNG tạo WebDriver mới
+                Allure.step("Đọc test data từ JSON", () -> {
+                        Assert.assertNotNull(data.get("username"), "Username không được null");
+                        Assert.assertNotNull(data.get("password"), "Password không được null");
+                });
+
                 LoginPage loginPage = new LoginPage(getDriver());
 
-                loginPage.openLoginPage() // URL lấy từ config.properties
-                                .login(username, password);
+                Allure.step("Mở trang đăng nhập", () -> loginPage.openLoginPage());
 
-                Assert.assertTrue(
+                Allure.step("Nhập thông tin đăng nhập (username + password)", () -> loginPage.login(
+                                ConfigReader.getUsername(), // Đọc từ env hoặc config
+                                ConfigReader.getPassword()));
+
+                Allure.step("Kiểm tra chuyển trang thành công → Products hiển thị", () -> Assert.assertTrue(
                                 loginPage.isLoginSuccessful(),
-                                "Sau khi đăng nhập, trang Products phải hiển thị");
+                                "Sau khi đăng nhập, trang Products phải hiển thị"));
         }
 
         /**
-         * TC02 - Đăng nhập thất bại với mật khẩu sai.
-         *
-         * <p>
-         * <b>Dữ liệu:</b> đọc từ {@code testdata/login_data.json} — testCase
-         * "TC02_LoginWrongPassword"
-         * </p>
-         * <p>
-         * <b>Kỳ vọng:</b> Hiển thị thông báo lỗi "Username and password do not match".
-         * </p>
+         * TC02 – Đăng nhập thất bại với mật khẩu sai.
          */
         @Test(description = "TC02 - Đăng nhập thất bại - mật khẩu sai")
+        @Story("UC-002: Đăng nhập với thông tin sai")
+        @Description("Kiểm thử đăng nhập với mật khẩu sai → hiển thị thông báo lỗi")
+        @Severity(SeverityLevel.NORMAL)
         public void testLoginWrongPassword() {
-                // Đọc dữ liệu từ JSON — KHÔNG hardcode
                 Map<String, String> data = TestDataReader.getTestCase(LOGIN_DATA, "TC02_LoginWrongPassword");
-                String username = data.get("username");
-                String password = data.get("password");
                 String expectedError = data.get("expectedResult");
 
                 LoginPage loginPage = new LoginPage(getDriver());
 
-                loginPage.openLoginPage()
-                                .login(username, password);
+                Allure.step("Mở trang đăng nhập", () -> loginPage.openLoginPage());
 
-                Assert.assertTrue(
+                Allure.step("Nhập mật khẩu sai và submit",
+                                () -> loginPage.login(data.get("username"), data.get("password")));
+
+                Allure.step("Kiểm tra thông báo lỗi hiển thị", () -> Assert.assertTrue(
                                 loginPage.isErrorDisplayed(),
-                                "Phải hiển thị thông báo lỗi khi mật khẩu sai");
+                                "Phải hiển thị thông báo lỗi khi mật khẩu sai"));
 
-                String actualError = loginPage.getErrorMessage();
-                Assert.assertTrue(
-                                actualError.contains(expectedError),
-                                "Thông báo lỗi không đúng.\nExpected contains: " + expectedError
-                                                + "\nActual: " + actualError);
+                Allure.step("Kiểm tra nội dung thông báo lỗi đúng", () -> {
+                        String actualError = loginPage.getErrorMessage();
+                        Assert.assertTrue(
+                                        actualError.contains(expectedError),
+                                        "Thông báo lỗi không đúng.\nExpected: " + expectedError
+                                                        + "\nActual: " + actualError);
+                });
         }
 
         /**
-         * TC03 - Đăng nhập với tài khoản bị khóa.
-         *
-         * <p>
-         * <b>Dữ liệu:</b> đọc từ {@code testdata/login_data.json} — testCase
-         * "TC03_LoginLockedUser"
-         * </p>
-         * <p>
-         * <b>Kỳ vọng:</b> Hiển thị thông báo "Sorry, this user has been locked out."
-         * </p>
+         * TC03 – Đăng nhập với tài khoản bị khóa.
          */
         @Test(description = "TC03 - Đăng nhập với tài khoản bị locked")
+        @Story("UC-003: Xử lý tài khoản bị khóa")
+        @Description("Kiểm thử đăng nhập với tài khoản locked → hiển thị thông báo bị khóa")
+        @Severity(SeverityLevel.NORMAL)
         public void testLoginLockedUser() {
-                // Đọc dữ liệu từ JSON — KHÔNG hardcode
                 Map<String, String> data = TestDataReader.getTestCase(LOGIN_DATA, "TC03_LoginLockedUser");
-                String username = data.get("username");
-                String password = data.get("password");
                 String expectedError = data.get("expectedResult");
 
                 LoginPage loginPage = new LoginPage(getDriver());
 
-                loginPage.openLoginPage()
-                                .login(username, password);
+                Allure.step("Mở trang đăng nhập", () -> loginPage.openLoginPage());
 
-                Assert.assertTrue(
+                Allure.step("Đăng nhập với tài khoản bị locked",
+                                () -> loginPage.login(data.get("username"), data.get("password")));
+
+                Allure.step("Kiểm tra thông báo lỗi bị khóa hiển thị", () -> Assert.assertTrue(
                                 loginPage.isErrorDisplayed(),
-                                "Phải hiển thị thông báo lỗi với tài khoản bị khóa");
+                                "Phải hiển thị thông báo lỗi với tài khoản bị khóa"));
 
-                String actualError = loginPage.getErrorMessage();
-                Assert.assertTrue(
-                                actualError.contains(expectedError),
-                                "Thông báo lỗi không đúng.\nExpected contains: " + expectedError
-                                                + "\nActual: " + actualError);
+                Allure.step("Kiểm tra nội dung thông báo locked đúng", () -> {
+                        String actualError = loginPage.getErrorMessage();
+                        Assert.assertTrue(
+                                        actualError.contains(expectedError),
+                                        "Thông báo lỗi không đúng.\nExpected: " + expectedError
+                                                        + "\nActual: " + actualError);
+                });
         }
 }

@@ -1,6 +1,7 @@
 package com.lab9.bai1;
 
 import io.github.bonigarcia.wdm.WebDriverManager;
+import io.qameta.allure.Attachment;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -281,7 +282,8 @@ public class BaseTest {
         try {
             // Chỉ chụp ảnh khi test FAIL
             if (result.getStatus() == ITestResult.FAILURE) {
-                takeScreenshot(driver, result);
+                takeScreenshot(driver, result); // Lưu file vào target/screenshots/
+                attachScreenshotToAllure(driver); // Đính kèm vào Allure Report
             }
         } finally {
             // Luôn đóng browser dù test pass hay fail
@@ -290,6 +292,29 @@ public class BaseTest {
                 // Xóa driver ra khỏi ThreadLocal để tránh memory leak
                 driverThreadLocal.remove();
             }
+        }
+    }
+
+    /**
+     * Đính kèm ảnh chụp màn hình vào Allure Report.
+     *
+     * <p>
+     * Annotation {@code @Attachment} của Allure bắt buộc phương thức
+     * trả về {@code byte[]} — Allure sẽ tự động nhúng vào report.
+     * </p>
+     *
+     * @param driver WebDriver hiện tại
+     * @return mảng byte của ảnh PNG, hoặc null nếu không chụp được
+     */
+    @Attachment(value = "Ảnh chụp khi thất bại", type = "image/png")
+    public byte[] attachScreenshotToAllure(WebDriver driver) {
+        if (driver == null)
+            return null;
+        try {
+            return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        } catch (WebDriverException e) {
+            System.err.println("[Allure Screenshot] Không chụp được: " + e.getMessage());
+            return null;
         }
     }
 
