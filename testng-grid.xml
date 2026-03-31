@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<!--
+    testng-grid.xml – Chạy song song 4 luồng trên Selenium Grid
+    Dùng cùng với: mvn test -Dgrid.url=http://localhost:4444 -DsuiteXmlFile=testng-grid.xml
+
+    parallel="tests" → mỗi <test> block chạy trên một thread riêng
+    thread-count="4" → tối đa 4 thread = 4 session Grid cùng lúc
+-->
+<suite name="Grid Test Suite" parallel="tests" thread-count="4" verbose="1">
+
+    <!-- Chrome – LoginTest -->
+    <test name="Chrome – LoginTest">
+        <parameter name="browser" value="chrome"/>
+        <parameter name="env"     value="dev"/>
+        <classes>
+            <class name="com.lab9.bai1.LoginTest"/>
+        </classes>
+    </test>
+
+    <!-- Chrome – LoginTest (lần 2 để tạo thêm session) -->
+    <test name="Chrome – LoginTest 2">
+        <parameter name="browser" value="chrome"/>
+        <parameter name="env"     value="dev"/>
+        <classes>
+            <class name="com.lab9.bai1.LoginTest"/>
+        </classes>
+    </test>
+
+    <!-- Firefox – LoginTest -->
+    <test name="Firefox – LoginTest">
+        <parameter name="browser" value="firefox"/>
+        <parameter name="env"     value="dev"/>
+        <classes>
+            <class name="com.lab9.bai1.LoginTest"/>
+        </classes>
+    </test>
+
+    <!-- Firefox – LoginTest (lần 2) -->
+    <test name="Firefox – LoginTest 2">
+        <parameter name="browser" value="firefox"/>
+        <parameter name="env"     value="dev"/>
+        <classes>
+            <class name="com.lab9.bai1.LoginTest"/>
+        </classes>
+    </test>
+
+</suite>

@@ -6,6 +6,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.testng.ITestResult;
@@ -13,11 +15,14 @@ import org.testng.annotations.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Date;
 
 /**
@@ -142,16 +147,67 @@ public class BaseTest {
      * @return WebDriver instance đã được cấu hình
      */
     private WebDriver createDriver(String browser) {
+        // Kiểm tra xem có truyền -Dgrid.url không (Selenium Grid mode)
+        String gridUrl = System.getProperty("grid.url");
+        if (gridUrl != null && !gridUrl.isBlank()) {
+            System.out.println("Grid URL  : " + gridUrl + " → dùng RemoteWebDriver");
+            return createRemoteDriver(browser, gridUrl); // Chạy trên Grid
+        }
+
         // Kiểm tra xem đang chạy trên CI server (GitHub Actions đặt CI=true)
         boolean isCI = System.getenv("CI") != null;
         System.out.println("CI mode   : " + isCI);
 
+        return createLocalDriver(browser, isCI); // Chạy local bình thường
+    }
+
+    /**
+     * Tạo RemoteWebDriver kết nối đến Selenium Grid.
+     *
+     * <p>
+     * Dùng khi chạy: {@code mvn test -Dgrid.url=http://localhost:4444}
+     * </p>
+     *
+     * @param browser "chrome" hoặc "firefox"
+     * @param gridUrl URL của Selenium Grid Hub
+     * @return RemoteWebDriver đã kết nối với Grid
+     */
+    private WebDriver createRemoteDriver(String browser, String gridUrl) {
+        DesiredCapabilities caps = new DesiredCapabilities();
+        caps.setBrowserName(browser.toLowerCase());
+
+        if (browser.equalsIgnoreCase("chrome")) {
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--no-sandbox", "--disable-dev-shm-usage");
+            caps.merge(options);
+        } else if (browser.equalsIgnoreCase("firefox")) {
+            FirefoxOptions options = new FirefoxOptions();
+            caps.merge(options);
+        }
+
+        try {
+            URL gridEndpoint = new URL(gridUrl + "/wd/hub");
+            RemoteWebDriver driver = new RemoteWebDriver(gridEndpoint, caps);
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+            return driver;
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Grid URL không hợp lệ: " + gridUrl, e);
+        }
+    }
+
+    /**
+     * Tạo WebDriver local (Chrome hoặc Firefox) tùy môi trường.
+     *
+     * @param browser "chrome" hoặc "firefox"
+     * @param isCI    true nếu đang chạy trên CI server
+     * @return WebDriver local
+     */
+    private WebDriver createLocalDriver(String browser, boolean isCI) {
         switch (browser.toLowerCase().trim()) {
             case "firefox":
                 WebDriverManager.firefoxdriver().setup();
                 FirefoxOptions firefoxOptions = new FirefoxOptions();
                 if (isCI) {
-                    // Headless bắt buộc trên Linux CI (không có màn hình thật)
                     firefoxOptions.addArguments("--headless");
                 }
                 return new FirefoxDriver(firefoxOptions);
@@ -161,17 +217,12 @@ public class BaseTest {
                 WebDriverManager.chromedriver().setup();
                 ChromeOptions chromeOptions = new ChromeOptions();
                 if (isCI) {
-                    // Chrome 112+ dùng --headless=new thay cho --headless cũ
                     chromeOptions.addArguments("--headless=new");
-                    // Bắt buộc trên Linux CI (chạy với quyền root trong container)
                     chromeOptions.addArguments("--no-sandbox");
-                    // Tránh lỗi OOM khi /dev/shm bị giới hạn trong Docker
                     chromeOptions.addArguments("--disable-dev-shm-usage");
                 } else {
-                    // Local: mở cửa sổ bình thường cho dễ debug
                     chromeOptions.addArguments("--start-maximized");
                 }
-                // Options chung cho cả local và CI
                 chromeOptions.addArguments("--disable-gpu");
                 chromeOptions.addArguments("--remote-allow-origins=*");
                 chromeOptions.addArguments("--window-size=1920,1080");

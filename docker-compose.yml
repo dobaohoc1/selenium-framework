@@ -1,0 +1,67 @@
+version: '3.8'
+
+# ============================================================
+# Selenium Grid 4 – Docker Compose
+# Lab 11 – Bài 4: Selenium Grid với Docker
+# ============================================================
+# Cấu trúc: 1 Hub + 2 Chrome Node + 1 Firefox Node
+#
+# Khởi động: docker-compose up -d
+# Kiểm tra:  docker ps
+# Grid UI:   http://localhost:4444
+# Dừng:      docker-compose down
+# ============================================================
+
+services:
+
+  # ── Hub (Router): Trung tâm điều phối ─────────────────────
+  selenium-hub:
+    image: selenium/hub:4.18.1
+    container_name: selenium-hub
+    ports:
+      - "4442:4442"   # Event bus publish port
+      - "4443:4443"   # Event bus subscribe port
+      - "4444:4444"   # Grid UI và WebDriver endpoint
+    environment:
+      - SE_SESSION_TIMEOUT=300
+      - SE_SESSION_REQUEST_TIMEOUT=300
+
+  # ── Chrome Node 1 ──────────────────────────────────────────
+  chrome-node-1:
+    image: selenium/node-chrome:4.18.1
+    container_name: chrome-node-1
+    shm_size: 2gb    # Quan trọng: Chrome cần shared memory để không crash
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=3      # Tối đa 3 session Chrome cùng lúc
+      - SE_NODE_SESSION_TIMEOUT=300
+
+  # ── Chrome Node 2 ──────────────────────────────────────────
+  chrome-node-2:
+    image: selenium/node-chrome:4.18.1
+    container_name: chrome-node-2
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=3
+
+  # ── Firefox Node ───────────────────────────────────────────
+  firefox-node:
+    image: selenium/node-firefox:4.18.1
+    container_name: firefox-node
+    shm_size: 2gb
+    depends_on:
+      - selenium-hub
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2      # Firefox node giới hạn 2 session
