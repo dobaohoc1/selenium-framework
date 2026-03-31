@@ -1,9 +1,7 @@
 # .github/workflows/selenium-ci.yml
 # ============================================================
-# GitHub Actions CI/CD – Selenium Test Suite (Lab 11 – Bài 1)
-# ============================================================
-# Trigger: mỗi lần push lên main/develop hoặc tạo Pull Request
-# Job: chạy Selenium test headless trên ubuntu-latest
+# GitHub Actions CI/CD – Selenium Test Suite (Lab 11 – Bài 2)
+# Matrix Strategy: Chrome + Firefox chạy SONG SONG cùng lúc
 # ============================================================
 
 name: Selenium Test Suite
@@ -17,8 +15,14 @@ on:
 
 jobs:
   run-tests:
-    name: Run Selenium Tests (Chrome Headless)
+    name: Run Tests – ${{ matrix.browser }}
     runs-on: ubuntu-latest
+
+    # ── Matrix Strategy: tạo 2 job chạy SONG SONG ──────────
+    strategy:
+      matrix:
+        browser: [chrome, firefox]   # Tạo 2 job chạy song song
+      fail-fast: false               # Chrome fail KHÔNG dừng Firefox
 
     steps:
       # ── Bước 1: Checkout source code ──────────────────────
@@ -33,28 +37,45 @@ jobs:
           distribution: 'temurin'
           cache: maven   # Cache ~/.m2 để lần sau build nhanh hơn
 
-      # ── Bước 3: Kiểm tra Chrome có sẵn (ubuntu-latest) ───
+      # ── Bước 3: Cài Firefox (chỉ khi matrix.browser = firefox) ──
+      - name: Cài Firefox
+        if: matrix.browser == 'firefox'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y firefox
+          firefox --version
+
+      # ── Bước 4: Kiểm tra Chrome (chỉ khi matrix.browser = chrome) ──
       - name: Kiểm tra Chrome version
+        if: matrix.browser == 'chrome'
         run: google-chrome --version
 
-      # ── Bước 4: Chạy Selenium Tests ───────────────────────
-      # -Dbrowser=chrome   → dùng Chrome (headless tự động khi CI=true)
-      # -Denv=dev          → môi trường dev (saucedemo.com)
-      # -DsuiteXmlFile=... → chỉ định file testng nào cần chạy
-      - name: Chạy Selenium Tests
-        run: mvn clean test -Dbrowser=chrome -Denv=dev -DsuiteXmlFile=testng-smoke.xml
-        working-directory: bai1
-        env:
-          CI: true                          # BaseTest.java đọc biến này để bật headless
-          APP_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}   # Credential an toàn từ Secrets
+      # ── Bước 5: Chạy Selenium Tests ───────────────────────
+      # -Dbrowser=${{ matrix.browser }} → dùng browser từ matrix
+      # CI=true → BaseTest.java tự động bật headless mode
+      - name: Chạy Selenium Tests (${{ matrix.browser }})
+        run: |
+          echo "=== Bắt đầu chạy test với browser: ${{ matrix.browser }} ==="
+          START_TIME=$(date +%s)
 
-      # ── Bước 5: Lưu kết quả test (luôn chạy dù test fail) ─
-      - name: Lưu kết quả test
-        if: always()   # Chạy dù test pass hay fail để không mất evidence
+          mvn clean test \
+            -Dbrowser=${{ matrix.browser }} \
+            -Denv=dev \
+            -DsuiteXmlFile=testng-smoke.xml
+
+          END_TIME=$(date +%s)
+          echo "=== Thời gian chạy: $((END_TIME - START_TIME)) giây ==="
+        env:
+          CI: true                                    # Bật headless tự động
+          APP_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}
+
+      # ── Bước 6: Lưu kết quả test (artifact riêng biệt/browser) ──
+      - name: Lưu kết quả test – ${{ matrix.browser }}
+        if: always()   # Luôn chạy dù test pass hay fail
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-${{ matrix.browser }}   # Artifact riêng biệt mỗi browser
           path: |
-            bai1/target/surefire-reports/
-            bai1/target/screenshots/
+            target/surefire-reports/
+            target/screenshots/
           retention-days: 30
