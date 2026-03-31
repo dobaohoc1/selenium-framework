@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+
+<!--
+    testng-smoke.xml – Smoke test suite dùng cho CI/CD pipeline
+    Chỉ chạy các test case quan trọng nhất để xác nhận build không bị broken.
+    Chạy tuần tự (không parallel) để tránh resource contention trên CI server.
+-->
+<suite name="Smoke Test Suite – CI/CD"
+       parallel="none"
+       verbose="1">
+
+    <parameter name="browser" value="chrome"/>
+    <parameter name="env"     value="dev"/>
+
+    <test name="Smoke – Login">
+        <classes>
+            <class name="com.lab9.bai1.LoginTest">
+                <methods>
+                    <!-- Chỉ chạy TC01 (happy path) để smoke nhanh -->
+                    <include name="testLoginSuccess"/>
+                    <include name="testLoginWrongPassword"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+
+</suite>

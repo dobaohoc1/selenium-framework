@@ -1,0 +1,42 @@
+### ============================================================
+### .gitignore – Selenium POM Framework (Lab 9 / Lab 11)
+### ============================================================
+
+# ---------- Maven build output ----------
+target/
+!target/.gitkeep
+
+# ---------- IDE ----------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.class
+
+# ---------- Screenshots / test evidence ----------
+screenshots/
+target/screenshots/
+
+# ---------- Allure report ----------
+allure-results/
+allure-report/
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- Sensitive / environment ----------
+.env
+*.env
+secrets.properties
+
+# ---------- OS generated ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- Temp files ----------
+*.tmp
+*.bak
+*.swp
