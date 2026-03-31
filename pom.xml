@@ -5,23 +5,17 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.lab9</groupId>
-        <artifactId>lab9-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
-    <artifactId>bai1-basepage-basetest</artifactId>
+    <groupId>com.lab11</groupId>
+    <artifactId>selenium-framework</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Bai1 - XayDung BasePage va BaseTest</name>
-    <description>Lab 9 - Bai 1: Xay dung BasePage va BaseTest framework</description>
+    <name>Selenium Framework - Lab 11 CI/CD</name>
+    <description>Lab 11: GitHub Actions CI/CD + Selenium Grid + Test Strategy</description>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <selenium.version>4.18.1</selenium.version>
         <testng.version>7.9.0</testng.version>
@@ -75,8 +69,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.12.1</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
             </plugin>
