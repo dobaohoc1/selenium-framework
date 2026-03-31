@@ -89,4 +89,53 @@ public class ConfigReader {
     public static String get(String key) {
         return props.getProperty(key);
     }
+
+    /**
+     * Lấy username để đăng nhập.
+     *
+     * <p>
+     * <b>Ưu tiên đọc từ biến môi trường</b> {@code APP_USERNAME}
+     * (được set bởi GitHub Secrets khi chạy CI/CD).
+     * Nếu không có → fallback về {@code app.username} trong config.properties
+     * (dùng khi chạy local).
+     * </p>
+     *
+     * <pre>{@code
+     * // CI/CD: GitHub Actions set APP_USERNAME = secrets.SAUCEDEMO_USERNAME
+     * // Local: đọc từ config.properties → app.username=standard_user
+     * }</pre>
+     *
+     * @return username, không bao giờ null
+     */
+    public static String getUsername() {
+        // Ưu tiên 1: Biến môi trường (GitHub Secrets → không lộ trong code)
+        String username = System.getenv("APP_USERNAME");
+        if (username == null || username.isBlank()) {
+            // Fallback: đọc từ config.properties khi chạy local
+            username = props.getProperty("app.username", "standard_user");
+        }
+        return username;
+    }
+
+    /**
+     * Lấy password để đăng nhập.
+     *
+     * <p>
+     * <b>Ưu tiên đọc từ biến môi trường</b> {@code APP_PASSWORD}
+     * (được set bởi GitHub Secrets khi chạy CI/CD).
+     * Nếu không có → fallback về {@code app.password} trong config.properties
+     * (dùng khi chạy local).
+     * </p>
+     *
+     * @return password, không bao giờ null
+     */
+    public static String getPassword() {
+        // Ưu tiên 1: Biến môi trường (GitHub Secrets → không lộ trong code)
+        String password = System.getenv("APP_PASSWORD");
+        if (password == null || password.isBlank()) {
+            // Fallback: đọc từ config.properties khi chạy local
+            password = props.getProperty("app.password", "secret_sauce");
+        }
+        return password;
+    }
 }

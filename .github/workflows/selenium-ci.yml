@@ -66,8 +66,10 @@ jobs:
           END_TIME=$(date +%s)
           echo "=== Thời gian chạy: $((END_TIME - START_TIME)) giây ==="
         env:
-          CI: true                                    # Bật headless tự động
-          APP_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}
+          CI: true                                          # Bật headless tự động
+          # GitHub tự động che giá trị → log hiển thị *** thay vì giá trị thật
+          APP_USERNAME: ${{ secrets.SAUCEDEMO_USERNAME }}   # ← GitHub Secret
+          APP_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}   # ← GitHub Secret
 
       # ── Bước 6: Lưu kết quả test (artifact riêng biệt/browser) ──
       - name: Lưu kết quả test – ${{ matrix.browser }}
